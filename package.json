@@ -1,0 +1,29 @@
+{
+  "name": "tristan",
+  "version": "1.0.0",
+  "description": "Telegram bot",
+  "main": "index.js",
+  "type": "module",
+  "scripts": {
+    "start": "node index.js",
+    "dev": "nodemon index.js"
+  },
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/thaseyor/tristan.git"
+  },
+  "author": "thaseyor",
+  "license": "ISC",
+  "bugs": {
+    "url": "https://github.com/thaseyor/tristan/issues"
+  },
+  "homepage": "https://github.com/thaseyor/tristan#readme",
+  "dependencies": {
+    "dotenv": "^14.3.2",
+    "telegraf": "^4.6.0"
+  },
+  "devDependencies": {
+    "eslint": "^8.8.0",
+    "nodemon": "^2.0.15"
+  }
+}
