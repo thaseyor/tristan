@@ -1,5 +1,5 @@
 {
   "scripts": {
-    "start": "cargo run"
+    "start": "cargo run --release"
   }
 }
