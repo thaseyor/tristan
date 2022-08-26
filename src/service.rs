@@ -1,4 +1,5 @@
 use crate::config::{self, Command};
+use std::error;
 use teloxide::{prelude::*, utils::command::BotCommands, RequestError};
 
 pub async fn set_default_rights(bot: &AutoSend<Bot>) -> Result<(), RequestError> {
@@ -15,11 +16,11 @@ pub async fn delete_system_message(
     chat_id: ChatId,
     chat_title: &str,
     message_id: i32,
-) -> Result<(), RequestError> {
+) -> Result<(), Box<dyn error::Error>> {
     let admins = bot.get_chat_administrators(chat_id).send().await?;
 
     if admins.len() == 0 {
-        return Ok(());
+        return Err("No admins in chat".into());
     }
 
     let my_id = bot.get_me().await?.id;
