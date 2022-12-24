@@ -26,7 +26,6 @@ async fn main() {
 
         if is_private_chat {
             let text = m.text();
-
             if let Some(text) = text {
                 let chat_id = m.chat.id;
                 let res = service::send_response(bot, chat_id, text).await;
@@ -36,6 +35,20 @@ async fn main() {
                 }
             };
         } else {
+            let chat_id = m.chat.id;
+            let chat_title = m.chat.title().unwrap_or_else(|| "your group");
+            let message_id = m.id;
+
+            let game = m.dice();
+            if let Some(_) = game {
+                let res = bot.delete_message(chat_id, message_id).await;
+
+                if let Err(e) = res {
+                    error!("{:?}", e);
+                }
+                return respond(());
+            }
+
             let leaved = m.left_chat_member();
             let joined = m.new_chat_members();
 
@@ -53,10 +66,6 @@ async fn main() {
                         Err(e) => error!("{:?}", e),
                     }
                 }
-
-                let chat_id = m.chat.id;
-                let chat_title = m.chat.title().unwrap_or_else(|| "your group");
-                let message_id = m.id;
 
                 let res =
                     service::delete_system_message(bot, chat_id, chat_title, message_id).await;
