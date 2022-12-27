@@ -23,57 +23,45 @@ async fn main() {
 
     teloxide::repl(bot, |m: Message, bot: AutoSend<Bot>| async move {
         let is_private_chat = m.chat.is_private();
+        let chat_id = m.chat.id;
 
         if is_private_chat {
-            let text = m.text();
-            if let Some(text) = text {
-                let chat_id = m.chat.id;
-                let res = service::send_response(bot, chat_id, text).await;
+            let text = m.text().unwrap_or_else(|| "/start");
+            service::send_response(bot, chat_id, text).await?;
+            return respond(());
+        }
 
-                if let Err(e) = res {
-                    error!("{:?}", e);
-                }
-            };
-        } else {
-            let chat_id = m.chat.id;
-            let chat_title = m.chat.title().unwrap_or_else(|| "your group");
-            let message_id = m.id;
+        let chat_title = m.chat.title().unwrap_or_else(|| "your group");
+        let message_id = m.id;
 
-            let game = m.dice();
-            if let Some(_) = game {
-                let res = bot.delete_message(chat_id, message_id).await;
+        // remove spam emojis (dice, football, etc.)
+        let game = m.dice();
+        if let Some(_) = game {
+            bot.delete_message(chat_id, message_id).await?;
+            return respond(());
+        }
 
-                if let Err(e) = res {
-                    error!("{:?}", e);
-                }
+        // check if nobody joined or leaved
+        let leaved = m.left_chat_member();
+        let joined = m.new_chat_members();
+
+        if !(joined.is_some() || leaved.is_some()) {
+            return respond(());
+        }
+
+        // check if bot is the one who left the group
+        if let Some(leaved) = leaved {
+            let me = bot.get_me().await?;
+
+            if leaved.id == me.id {
                 return respond(());
             }
+        }
 
-            let leaved = m.left_chat_member();
-            let joined = m.new_chat_members();
+        let res = service::delete_system_message(bot, chat_id, chat_title, message_id).await;
 
-            // check if smbd joined or leaved
-            if joined.is_some() || leaved.is_some() {
-                // check if bot is the one who left the group
-                if let Some(leaved) = leaved {
-                    let me = bot.get_me().await;
-                    match me {
-                        Ok(me) => {
-                            if leaved.id == me.id {
-                                return respond(());
-                            }
-                        }
-                        Err(e) => error!("{:?}", e),
-                    }
-                }
-
-                let res =
-                    service::delete_system_message(bot, chat_id, chat_title, message_id).await;
-
-                if let Err(e) = res {
-                    error!("{:?}", e);
-                }
-            }
+        if let Err(e) = res {
+            error!("{:?}", e);
         }
 
         respond(())
