@@ -24,12 +24,7 @@ pub async fn delete_system_message(
     }
 
     let my_id = bot.get_me().await?.id;
-    let owner_id = admins
-        .iter()
-        .find(|a| a.is_owner())
-        .expect("Any group must have an owner")
-        .user
-        .id;
+    let owner = admins.iter().find(|a| a.is_owner());
 
     let me_as_admin = admins.iter().find(|a| a.user.id == my_id);
 
@@ -38,6 +33,12 @@ pub async fn delete_system_message(
             bot.delete_message(chat_id, message_id).await?;
         }
         Some(_) => {
+            if let None = owner {
+                return Err("No owner in chat".into());
+            }
+
+            let owner_id = owner.unwrap().user.id;
+
             bot.send_message(
                 owner_id,
                 format!(
@@ -48,6 +49,12 @@ pub async fn delete_system_message(
             .await?;
         }
         None => {
+            if let None = owner {
+                return Err("No owner in chat".into());
+            }
+
+            let owner_id = owner.unwrap().user.id;
+
             bot.send_message(
                 owner_id,
                 format!("Promote me to admin pls in {}", chat_title),
