@@ -34,22 +34,17 @@ async fn main() {
         let chat_title = m.chat.title().unwrap_or_else(|| "your group");
         let message_id = m.id;
 
-        // remove spam emojis (dice, football, etc.)
-        let game = m.dice();
-        if let Some(_) = game {
-            bot.delete_message(chat_id, message_id).await?;
-            return respond(());
+        // check if system message
+        match m.kind {
+            teloxide::types::MessageKind::Dice(_) => {}
+            teloxide::types::MessageKind::LeftChatMember(_) => {}
+            teloxide::types::MessageKind::NewChatMembers(_) => {}
+            teloxide::types::MessageKind::NewChatTitle(_) => {}
+            _ => return respond(()),
         }
 
-        // check if nobody joined or leaved
+        // check if bot left the group
         let leaved = m.left_chat_member();
-        let joined = m.new_chat_members();
-
-        if !(joined.is_some() || leaved.is_some()) {
-            return respond(());
-        }
-
-        // check if bot is the one who left the group
         if let Some(leaved) = leaved {
             let me = bot.get_me().await?;
 
