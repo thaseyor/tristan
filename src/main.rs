@@ -35,12 +35,25 @@ async fn main() {
         let message_id = m.id;
 
         // check if system message
-        match m.kind {
-            teloxide::types::MessageKind::Dice(_) => {}
-            teloxide::types::MessageKind::LeftChatMember(_) => {}
-            teloxide::types::MessageKind::NewChatMembers(_) => {}
-            teloxide::types::MessageKind::NewChatTitle(_) => {}
-            _ => return respond(()),
+        let is_system_message = match m.kind {
+            teloxide::types::MessageKind::Dice(_) => true,
+            teloxide::types::MessageKind::LeftChatMember(_) => true,
+            teloxide::types::MessageKind::NewChatMembers(_) => true,
+            teloxide::types::MessageKind::NewChatTitle(_) => true,
+            _ => false,
+        };
+
+        let is_forbidden_bot = m.via_bot.is_some()
+            && config::INLINE_BOTS_BLACKLIST.contains(
+                &&m.via_bot
+                    .clone()
+                    .unwrap()
+                    .username
+                    .unwrap_or_else(|| "".to_string())[..],
+            );
+
+        if !(is_system_message || is_forbidden_bot) {
+            return respond(());
         }
 
         // check if bot left the group

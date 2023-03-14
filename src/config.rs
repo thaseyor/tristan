@@ -32,3 +32,5 @@ pub const BOT_RIGHTS: ChatAdministratorRights = ChatAdministratorRights {
     can_manage_video_chats: false,
     is_anonymous: false,
 };
+
+pub const INLINE_BOTS_BLACKLIST: [&str; 1] = ["HowGayBot"];
