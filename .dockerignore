@@ -1,0 +1,34 @@
+# IntelliJ project files
+.idea
+.vscode
+.vs
+*.iml
+out
+gen### Node template
+# Logs
+logs
+*.log
+npm-debug.log*
+
+# Runtime data
+pids
+*.pid
+*.seed
+*.pid.lock
+
+# Build directories
+target
+
+# Optional npm cache directory
+.npm
+yarn.lock
+
+# Optional eslint cache
+.eslintcache
+
+# dotenv environment variables file
+.env
+
+.git
+
+.DS_Store

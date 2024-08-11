@@ -1,0 +1,41 @@
+name: "Publish Docker Image"
+
+on:
+  push:
+    branches: [main]
+    paths:
+      - "*"
+
+  workflow_dispatch:
+
+env:
+  IMAGE_NAME: tristan
+  REGISTRY: ghcr.io
+
+jobs:
+  build:
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Check out the repo
+        uses: actions/checkout@v4
+
+      - name: Log in to ghcr
+        uses: docker/login-action@65b78e6e13532edd9afa3aa52ac7964289d1a9c1
+        with:
+          registry: ${{ env.REGISTRY }}
+          username: ${{ github.actor }}
+          password: ${{ secrets.GITHUB_TOKEN }}
+
+      - name: Build and push image
+        run: |
+          IMAGE=${{ env.REGISTRY }}/${{ github.repository_owner }}/${{ env.IMAGE_NAME }}
+
+          # Change all uppercase to lowercase
+          TAG=$(echo $IMAGE | tr '[A-Z]' '[a-z]')
+
+          # Build the Docker image
+          docker build . -t $TAG
+
+          # Docker Push
+          docker push $TAG
