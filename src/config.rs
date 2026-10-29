@@ -2,9 +2,35 @@ use dotenvy::dotenv;
 use std::env;
 use teloxide::{types::ChatAdministratorRights, utils::command::BotCommands};
 
-pub fn get_token() -> String {
-    dotenv().ok();
-    env::var("BOT_TOKEN").expect("BOT_TOKEN not set")
+pub struct Config {
+    pub token: String,
+    inline_bots_blacklist: Vec<String>,
+}
+
+impl Config {
+    pub fn from_env() -> Self {
+        dotenv().ok();
+        Self {
+            token: env::var("BOT_TOKEN").expect("BOT_TOKEN not set"),
+            inline_bots_blacklist: parse_usernames(
+                &env::var("INLINE_BOTS_BLACKLIST").unwrap_or_default(),
+            ),
+        }
+    }
+
+    pub fn is_blacklisted_bot(&self, username: &str) -> bool {
+        self.inline_bots_blacklist
+            .iter()
+            .any(|b| b.eq_ignore_ascii_case(username))
+    }
+}
+
+fn parse_usernames(list: &str) -> Vec<String> {
+    list.split(',')
+        .map(|u| u.trim().trim_start_matches('@'))
+        .filter(|u| !u.is_empty())
+        .map(String::from)
+        .collect()
 }
 
 pub const BOT_DESCRIPTION: &str = "Tristan here!\nAdd me as an administrator in your group!";
@@ -36,4 +62,13 @@ pub const BOT_RIGHTS: ChatAdministratorRights = ChatAdministratorRights {
     is_anonymous: false,
 };
 
-pub const INLINE_BOTS_BLACKLIST: [&str; 1] = ["HowGayBot"];
+#[cfg(test)]
+mod tests {
+    use super::*;
+
+    #[test]
+    fn parses_comma_separated_usernames() {
+        assert_eq!(parse_usernames(" SpamBot, @gif ,,"), ["SpamBot", "gif"]);
+        assert!(parse_usernames("").is_empty());
+    }
+}
