@@ -19,7 +19,7 @@ pub async fn delete_system_message(
 ) -> Result<(), Box<dyn Error>> {
     let admins = bot.get_chat_administrators(chat_id).send().await?;
 
-    if admins.len() == 0 {
+    if admins.is_empty() {
         return Err("No admins in chat".into());
     }
 
@@ -33,7 +33,7 @@ pub async fn delete_system_message(
             bot.delete_message(chat_id, message_id).await?;
         }
         Some(_) => {
-            if let None = owner {
+            if owner.is_none() {
                 return Err("No owner in chat".into());
             }
 
@@ -49,7 +49,7 @@ pub async fn delete_system_message(
             .await?;
         }
         None => {
-            if let None = owner {
+            if owner.is_none() {
                 return Err("No owner in chat".into());
             }
 
@@ -66,29 +66,19 @@ pub async fn delete_system_message(
     Ok(())
 }
 
-pub async fn send_response(
-    bot: Bot,
-    chat_id: ChatId,
-    text: &str,
-) -> Result<(), RequestError> {
+pub async fn send_response(bot: Bot, chat_id: ChatId, text: &str) -> Result<(), RequestError> {
     let me = bot.get_me().await?;
     let username = me.user.username.expect("Bots must have usernames");
 
-    let response = get_command_response(&text, &username);
+    let response = get_command_response(text, &username);
     bot.send_message(chat_id, response).await?;
 
     Ok(())
 }
 
 fn get_command_response(text: &str, username: &str) -> String {
-    let res = Command::parse(text, username);
-    let response = match res {
-        Ok(command) => match command {
-            Command::Start => config::BOT_DESCRIPTION.to_string(),
-            Command::Help => Command::descriptions().to_string(),
-        },
-        Err(_e) => config::BOT_DESCRIPTION.to_string(),
-    };
-
-    return response;
+    match Command::parse(text, username) {
+        Ok(Command::Help) => Command::descriptions().to_string(),
+        Ok(Command::Start) | Err(_) => config::BOT_DESCRIPTION.to_string(),
+    }
 }

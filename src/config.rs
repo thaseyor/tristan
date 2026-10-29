@@ -4,8 +4,7 @@ use teloxide::{types::ChatAdministratorRights, utils::command::BotCommands};
 
 pub fn get_token() -> String {
     dotenv().ok();
-    let token = env::var("BOT_TOKEN").expect("BOT_TOKEN not set");
-    return token;
+    env::var("BOT_TOKEN").expect("BOT_TOKEN not set")
 }
 
 pub const BOT_DESCRIPTION: &str = "Tristan here!\nAdd me as an administrator in your group!";

@@ -1,11 +1,8 @@
 mod config;
 mod service;
 
-use teloxide::prelude::*;
-extern crate pretty_env_logger;
-
-#[macro_use]
-extern crate log;
+use log::{error, info};
+use teloxide::{prelude::*, types::MessageKind};
 
 #[tokio::main]
 async fn main() {
@@ -26,31 +23,26 @@ async fn main() {
         let chat_id = m.chat.id;
 
         if is_private_chat {
-            let text = m.text().unwrap_or_else(|| "/start");
+            let text = m.text().unwrap_or("/start");
             service::send_response(bot, chat_id, text).await?;
             return respond(());
         }
 
-        let chat_title = m.chat.title().unwrap_or_else(|| "your group");
+        let chat_title = m.chat.title().unwrap_or("your group");
         let message_id = m.id;
 
         // check if system message
-        let is_system_message = match m.kind {
-            teloxide::types::MessageKind::Dice(_) => true,
-            teloxide::types::MessageKind::LeftChatMember(_) => true,
-            teloxide::types::MessageKind::NewChatMembers(_) => true,
-            teloxide::types::MessageKind::NewChatTitle(_) => true,
-            _ => false,
-        };
+        let is_system_message = matches!(
+            m.kind,
+            MessageKind::Dice(_)
+                | MessageKind::LeftChatMember(_)
+                | MessageKind::NewChatMembers(_)
+                | MessageKind::NewChatTitle(_)
+        );
 
         let is_forbidden_bot = m.via_bot.is_some()
-            && config::INLINE_BOTS_BLACKLIST.contains(
-                &&m.via_bot
-                    .clone()
-                    .unwrap()
-                    .username
-                    .unwrap_or_else(|| "".to_string())[..],
-            );
+            && config::INLINE_BOTS_BLACKLIST
+                .contains(&&m.via_bot.clone().unwrap().username.unwrap_or_default()[..]);
 
         if !(is_system_message || is_forbidden_bot) {
             return respond(());
