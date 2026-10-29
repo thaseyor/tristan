@@ -13,7 +13,7 @@ async fn main() {
     info!("Starting tristan bot");
 
     let token = config::get_token();
-    let bot = Bot::new(token).auto_send();
+    let bot = Bot::new(token);
 
     let res = service::set_default_rights(&bot).await;
 
@@ -21,7 +21,7 @@ async fn main() {
         error!("{:?}", e);
     }
 
-    teloxide::repl(bot, |m: Message, bot: AutoSend<Bot>| async move {
+    teloxide::repl(bot, |m: Message, bot: Bot| async move {
         let is_private_chat = m.chat.is_private();
         let chat_id = m.chat.id;
 

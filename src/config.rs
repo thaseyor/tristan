@@ -1,4 +1,4 @@
-use dotenv::dotenv;
+use dotenvy::dotenv;
 use std::env;
 use teloxide::{types::ChatAdministratorRights, utils::command::BotCommands};
 
@@ -11,7 +11,7 @@ pub fn get_token() -> String {
 pub const BOT_DESCRIPTION: &str = "Tristan here!\nAdd me as an administrator in your group!";
 
 #[derive(BotCommands, Clone)]
-#[command(rename = "lowercase", description = "List of supported commands:")]
+#[command(rename_rule = "lowercase", description = "List of supported commands:")]
 pub enum Command {
     #[command(description = "")]
     Start,
@@ -30,6 +30,10 @@ pub const BOT_RIGHTS: ChatAdministratorRights = ChatAdministratorRights {
     can_edit_messages: Some(false),
     can_post_messages: Some(false),
     can_manage_video_chats: false,
+    can_post_stories: Some(false),
+    can_edit_stories: Some(false),
+    can_delete_stories: Some(false),
+    can_manage_topics: Some(false),
     is_anonymous: false,
 };
 
