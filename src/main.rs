@@ -4,7 +4,10 @@ mod service;
 use config::Config;
 use log::{error, info};
 use std::sync::Arc;
-use teloxide::{prelude::*, types::MessageKind};
+use teloxide::{
+    prelude::*,
+    types::{Me, MessageKind},
+};
 
 #[tokio::main]
 async fn main() {
@@ -14,27 +17,27 @@ async fn main() {
     let config = Arc::new(Config::from_env());
     let bot = Bot::new(&config.token);
 
-    let res = service::set_default_rights(&bot).await;
-
-    if let Err(e) = res {
+    if let Err(e) = service::set_default_rights(&bot).await {
         error!("{:?}", e);
     }
 
+    let me = bot.get_me().await.expect("Failed to fetch bot info");
+
     Dispatcher::builder(bot, Update::filter_message().endpoint(handle_message))
-        .dependencies(dptree::deps![config])
+        .dependencies(dptree::deps![config, me])
         .enable_ctrlc_handler()
         .build()
         .dispatch()
         .await;
 }
 
-async fn handle_message(bot: Bot, m: Message, config: Arc<Config>) -> ResponseResult<()> {
+async fn handle_message(bot: Bot, m: Message, me: Me, config: Arc<Config>) -> ResponseResult<()> {
     let is_private_chat = m.chat.is_private();
     let chat_id = m.chat.id;
 
     if is_private_chat {
         let text = m.text().unwrap_or("/start");
-        service::send_response(bot, chat_id, text).await?;
+        service::send_response(&bot, &me, chat_id, text).await?;
         return respond(());
     }
 
@@ -60,19 +63,12 @@ async fn handle_message(bot: Bot, m: Message, config: Arc<Config>) -> ResponseRe
         return respond(());
     }
 
-    // check if bot left the group
-    let leaved = m.left_chat_member();
-    if let Some(leaved) = leaved {
-        let me = bot.get_me().await?;
-
-        if leaved.id == me.id {
-            return respond(());
-        }
+    if m.left_chat_member().is_some_and(|u| u.id == me.id) {
+        return respond(());
     }
 
-    let res = service::delete_system_message(bot, chat_id, chat_title, message_id).await;
-
-    if let Err(e) = res {
+    if let Err(e) = service::delete_system_message(&bot, &me, chat_id, chat_title, message_id).await
+    {
         error!("{:?}", e);
     }
 
