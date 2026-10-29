@@ -1,4 +1,7 @@
-use crate::config::{self, Command};
+use crate::{
+    config::{self, Command},
+    reminders::Reminders,
+};
 use std::error::Error;
 use teloxide::{
     prelude::*,
@@ -18,15 +21,17 @@ pub async fn set_default_rights(bot: &Bot) -> Result<(), RequestError> {
 pub async fn delete_system_message(
     bot: &Bot,
     me: &Me,
+    reminders: &Reminders,
     chat_id: ChatId,
     chat_title: &str,
     message_id: MessageId,
 ) -> Result<(), Box<dyn Error + Send + Sync>> {
     match bot.delete_message(chat_id, message_id).await {
         Ok(_) => Ok(()),
-        Err(RequestError::Api(ApiError::MessageCantBeDeleted)) => {
+        Err(RequestError::Api(ApiError::MessageCantBeDeleted)) if reminders.is_due(chat_id) => {
             ask_owner_for_rights(bot, me, chat_id, chat_title).await
         }
+        Err(RequestError::Api(ApiError::MessageCantBeDeleted)) => Ok(()),
         Err(e) => Err(e.into()),
     }
 }

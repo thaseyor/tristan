@@ -1,13 +1,17 @@
 mod config;
+mod reminders;
 mod service;
 
 use config::Config;
 use log::{error, info};
-use std::sync::Arc;
+use reminders::Reminders;
+use std::{sync::Arc, time::Duration};
 use teloxide::{
     prelude::*,
     types::{Me, MessageKind},
 };
+
+const OWNER_REMINDER_INTERVAL: Duration = Duration::from_secs(24 * 60 * 60);
 
 #[tokio::main]
 async fn main() {
@@ -22,16 +26,23 @@ async fn main() {
     }
 
     let me = bot.get_me().await.expect("Failed to fetch bot info");
+    let reminders = Arc::new(Reminders::new(OWNER_REMINDER_INTERVAL));
 
     Dispatcher::builder(bot, Update::filter_message().endpoint(handle_message))
-        .dependencies(dptree::deps![config, me])
+        .dependencies(dptree::deps![config, me, reminders])
         .enable_ctrlc_handler()
         .build()
         .dispatch()
         .await;
 }
 
-async fn handle_message(bot: Bot, m: Message, me: Me, config: Arc<Config>) -> ResponseResult<()> {
+async fn handle_message(
+    bot: Bot,
+    m: Message,
+    me: Me,
+    config: Arc<Config>,
+    reminders: Arc<Reminders>,
+) -> ResponseResult<()> {
     let is_private_chat = m.chat.is_private();
     let chat_id = m.chat.id;
 
@@ -67,7 +78,8 @@ async fn handle_message(bot: Bot, m: Message, me: Me, config: Arc<Config>) -> Re
         return respond(());
     }
 
-    if let Err(e) = service::delete_system_message(&bot, &me, chat_id, chat_title, message_id).await
+    if let Err(e) =
+        service::delete_system_message(&bot, &me, &reminders, chat_id, chat_title, message_id).await
     {
         error!("{:?}", e);
     }
